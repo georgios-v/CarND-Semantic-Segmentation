@@ -2,6 +2,70 @@
 ### Introduction
 In this project, you'll label the pixels of a road in images using a Fully Convolutional Network (FCN).
 
+### Method
+---
+
+#### Architecture
+The network is compriosed of 4 components:
+- The encoder which is the first 7 layers of a pre-trained VGG16 model
+- A 1x1 convolution
+- The decoder that upsamples the data back to the original dimentions, producing the segmentation
+- Skip connections between layers of the encoder and the decoder, along with the corresponding piecewise convolutions to produce equal size data structures between encoder and decoder
+
+#### Optimizer 
+
+Cross-entropy loss was used along with an Adam optimizer
+
+#### Parameters
+
+For training the model certtain parameters had to be setting
+
+- keep_prob: 0.6
+- learning_rate: 0.0001
+- epochs: 20
+- batch_size: 10
+
+### Evaluation
+---
+The loss value follows a monotonic decline with a rate ~0.1 per epoch. However, this is tightly dependent on the learning rate. I experimented with learning rate values in [0.001, 0.0005, 0.0001, 0.00001]. The pattern of the loss was the same given enough epochs. However the accuracy of the model was not the same. A very low LR produced noticeably greater overfitting, with coloring expanded to pavements and other non drivable surfaces.
+
+Here is plot of the Loss for 30 epochs for various Learning Rate values
+
+![sample1](./samples/Loss_for_LR.png)
+
+#### Segmentation Samples
+
+- *Learning Rate 0.001*
+
+![sample1](./samples/lr_10-3_01.png)
+![sample2](./samples/lr_10-3_02.png)
+![sample3](./samples/lr_10-3_03.png)
+![sample4](./samples/lr_10-3_04.png)
+![sample4](./samples/lr_10-5_04.png)
+
+- *Learning Rate 0.0005*
+
+![sample1](./samples/lr_5-10-4_01.png)
+![sample2](./samples/lr_5-10-4_02.png)
+![sample3](./samples/lr_5-10-4_03.png)
+![sample4](./samples/lr_5-10-4_04.png)
+
+- *Learning Rate 0.0001*
+
+![sample1](./samples/lr_10-4_01.png)
+![sample2](./samples/lr_10-4_02.png)
+![sample3](./samples/lr_10-4_03.png)
+![sample4](./samples/lr_10-4_04.png)
+
+- *Learning Rate 0.00001*
+
+![sample1](./samples/lr_10-5_01.png)
+![sample2](./samples/lr_10-5_02.png)
+![sample3](./samples/lr_10-5_03.png)
+![sample4](./samples/lr_10-5_04.png)
+
+## Original Udacity README
+---
 ### Setup
 ##### GPU
 `main.py` will check to make sure you are using GPU - if you don't have a GPU on your system, you can use AWS or another cloud computing platform.
