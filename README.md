@@ -22,7 +22,7 @@ For training the model certtain parameters had to be setting
 
 - keep_prob: 0.6
 - learning_rate: 0.0001
-- epochs: 20
+- epochs: 30
 - batch_size: 10
 
 ### Evaluation
