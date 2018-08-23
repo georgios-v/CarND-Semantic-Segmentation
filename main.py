@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import os.path
 import tensorflow as tf
-from tensorflow.contrib.learn.python.learn.estimators.head import _logits
-
 import helper
 import warnings
 from distutils.version import LooseVersion
@@ -10,8 +8,6 @@ import project_tests as tests
 
 
 # Check TensorFlow Version
-from helper import gen_batch_function
-
 assert LooseVersion(tf.__version__) >= LooseVersion('1.0'), 'Please use TensorFlow version 1.0 or newer.  You are using {}'.format(tf.__version__)
 print('TensorFlow Version: {}'.format(tf.__version__))
 
@@ -47,6 +43,8 @@ def load_vgg(sess, vgg_path):
     t_l7 = graph.get_tensor_by_name(vgg_layer7_out_tensor_name)
 
     return t_input, t_dropout, t_l3, t_l4, t_l7
+
+print('Testing load_vgg')
 tests.test_load_vgg(load_vgg, tf)
 
 
@@ -90,6 +88,9 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
                                     kernel_initializer=tf.random_normal_initializer(stddev=0.01),
                                     kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
     return output
+
+
+print('Testing layers')
 tests.test_layers(layers)
 
 
@@ -107,12 +108,14 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
     correct_label = tf.reshape(correct_label, (-1, num_classes))
 
-    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label))
+    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=correct_label))
 
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     train_op = optimizer.minimize(cross_entropy_loss)
 
     return logits, train_op, cross_entropy_loss
+
+print('Testing optimize')
 tests.test_optimize(optimize)
 
 
@@ -136,31 +139,37 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     sess.run(tf.global_variables_initializer())
 
     for i in range(epochs):
-        print("EPOCH {} ".format(i + 1))
+        total_loss = 0
+        print("EPOCH {} ...".format(i + 1))
         for image, label in get_batches_fn(batch_size):
             _, loss = sess.run([train_op, cross_entropy_loss],
-                     feed_dict={input_image: image, correct_label: label, keep_prob: 0.7, learning_rate: 0.001})
-            print("Loss: = {:.4f}".format(loss))
+                     feed_dict={input_image: image, correct_label: label, 
+                                keep_prob: 0.6, learning_rate: 0.0001})
+            total_loss += loss;
+        print("Loss = {:.3f}".format(total_loss))
+
+print('Testing train_nn')
 tests.test_train_nn(train_nn)
 
 
 def run():
-    epochs = 30
+    print('Running')
+    epochs = 20
     batch_size = 10
 
     num_classes = 2
     image_shape = (160, 576)
     data_dir = './data'
     runs_dir = './runs'
-    tests.test_for_kitti_dataset(data_dir)
+    # tests.test_for_kitti_dataset(data_dir)
 
     # Download pretrained vgg model
-    helper.maybe_download_pretrained_vgg(data_dir)
+    # helper.maybe_download_pretrained_vgg(data_dir)
 
     # OPTIONAL: Train and Inference on the cityscapes dataset instead of the Kitti dataset.
     # You'll need a GPU with at least 10 teraFLOPS to train on.
     #  https://www.cityscapes-dataset.com/
-
+    print("Starting...")
     with tf.Session() as sess:
         # Path to vgg model
         vgg_path = os.path.join(data_dir, 'vgg')
@@ -172,14 +181,17 @@ def run():
 
         # TODO: Build NN using load_vgg, layers, and optimize function
 
+        print("Creating model")
         t_label = tf.placeholder(tf.int32, [None, None, None, num_classes], name='correct_label')
         learning_rate = tf.placeholder(tf.float32, name='learning_rate')
 
+        print("Loading model")
         t_input, t_dropout, t_l3, t_l4, t_l7 = load_vgg(sess, vgg_path)
         t_output = layers(t_l3, t_l4, t_l7, num_classes)
         logits, train_op, cross_entropy_loss = optimize(t_output, t_label, learning_rate, num_classes)
 
         # TODO: Train NN using the train_nn function
+        print("Training")
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss,
                  t_input, t_label, t_dropout, learning_rate)
 
